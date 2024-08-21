@@ -1,0 +1,9 @@
+{% extends 'base.html.twig' %}
+
+{% block title "Recette : " ~ recipe.title %}
+
+{% block body %}
+		<h1>{{ recipe.title }}</h1>
+		{# le premier form est le nom de la fonction et (form) est le nom de du formulaire dans RecipeController.php #}
+		{{ form(form)}}
+{% endblock %}

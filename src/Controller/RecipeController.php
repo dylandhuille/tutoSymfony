@@ -3,8 +3,10 @@
 namespace App\Controller;
 
 use App\Entity\Recipe;
+use App\Form\RecipeType;
 use App\Repository\RecipeRepository;
 use DateTimeImmutable;
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -54,5 +56,53 @@ class RecipeController extends AbstractController
         return $this->render('recipe/show.html.twig', [
             'recipe' => $recipe
         ]);
+    }
+    // methods permet de "securiser" en acceptant que les mathode post et get pour cette page
+    #[Route('/recettes/{id}/edit', name: 'recipe.edit', methods: ['GET','POST'])]
+    // Recipe $recipe va chercher le recette don l'id est passer dans l'url évite de faire $recipe = $repository->find($id);
+    public function edit(Recipe $recipe, Request $request, EntityManagerInterface $em) {
+        // ici on créé le formulaire a l'aide de la class de la recette RecipeType avec les données de la base de donnée $recipe
+        $form = $this->createForm(RecipeType::class, $recipe);
+        // éffectue un setTitle etSlug ... avec les nouveaux champs
+        $form->handleRequest($request);
+        // on verifi si le formulaire est soumit et valide
+        if($form->isSubmitted() && $form->isValid()){
+            // $recipe->setUpdateAt(new \DateTimeImmutable());
+            //on envoie les modif en base de donnée
+            $em->flush();
+            $this->addFlash('success', 'La recette a bien été modifiée');
+            return $this->redirectToRoute('recipe.index');
+        }
+        return $this->render('recipe/edit.html.twig', [
+            'recipe' =>$recipe,
+            'form' =>$form
+        ]);
+    }
+
+    #[Route('/recettes/create', name: 'recipe.create')]
+    public function create(Request $request, EntityManagerInterface $em) {
+        $recipe = new Recipe();
+        $form = $this->createForm(RecipeType::class, $recipe);
+        $form->handleRequest($request);
+        //
+        // $recipe->setCreatedAt(new \DateTimeImmutable());
+        // $recipe->setUpdateAt(new \DateTimeImmutable());
+        if ($form->isSubmitted() && $form->isValid()) {
+            $em->persist($recipe);
+            $em->flush();
+            $this->addFlash('success', 'La recette a bien été créée');
+            return $this->redirectToRoute('recipe.index');
+        }
+        return $this->render('recipe/create.html.twig', [
+            'form' => $form
+        ]);
+    }
+    // methods permet de "securiser" en acceptant que la methode delete pour cette page
+    #[Route('/recettes/{id}', name: 'recipe.delete', methods: ['DELETE'])]
+    public function remove(Recipe $recipe, EntityManagerInterface $em){
+        $em->remove ($recipe);
+        $em->flush();
+        $this->addFlash('success', 'La recette a bien été supprimée');
+        return $this->redirectToRoute('recipe.index');
     }
 }
